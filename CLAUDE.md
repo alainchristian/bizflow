@@ -104,7 +104,11 @@ src/
 
 > Update this section as work progresses — it tells Claude Code exactly where the project is and what's next, so a new session doesn't have to guess.
 
-**Status:** Step 1 — Foundation & Tooling complete.
-**Next step:** Step 2 — Authentication (signup/login/logout, password hashing, session/JWT issuance). See `/docs/roadmap/build-order.md`.
+**Status:** Step 2 — Authentication complete.
+**Next step:** Step 3 — Multi-Tenancy & Organizations (org creation/membership, base tenant-scoped repository + RLS pattern, tenant isolation test template). See `/docs/roadmap/build-order.md`.
 
 Step 1 deliverables in place: NestJS backend (`backend/`) with config module, logging, and a Terminus health-check at `/api/v1/health`; Vite + React + TS frontend (`frontend/`) with a routing skeleton (React Router) and a Tailwind + Radix Themes design-system base; `docker-compose.yml` running Postgres, Redis, the API, and the frontend together (verified with `docker compose up`); GitHub Actions CI (`.github/workflows/ci.yml`) running lint/test/build for both apps on every PR.
+
+Step 2 deliverables in place: `users` module (global identity — no `organization_id` yet, per the blueprint's multi-org note) owning the `users` table via TypeORM, with migration tooling (`npm run migration:*`, backed by `src/database/data-source.ts`). `auth` module depends on `users` through `UsersService` only, not its repository — register/login/refresh issue short-lived access + longer-lived refresh JWTs (separate secrets), `JwtAuthGuard` + `@CurrentUser()` protect routes (`GET /auth/me` is the first protected endpoint). Frontend has signup/login pages (React Hook Form + Zod), a Zustand-persisted auth store, TanStack Query for the requests, and `RequireAuth` gating `/account`. CORS is enabled on the API for the frontend origin (`CORS_ORIGINS` env var) — required for the browser to call cross-origin from `:5173` to `:3000`. CI's backend job now runs a Postgres service container and applies migrations before the e2e suite. Verified end-to-end in a real browser via `docker compose up --build`: register → protected `/account` page (backed by a real `GET /auth/me` call) → logout → login → invalid-credentials rejection.
+
+No RBAC/permissions yet (that's Step 4) — the guard on `/auth/me` is authentication only, not a permission check.

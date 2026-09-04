@@ -11,15 +11,21 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@radix-ui/themes": "^3.3.0",
+    "@tanstack/react-query": "^5.102.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.3"
+    "react-hook-form": "^7.87.0",
+    "react-router-dom": "^7.18.3",
+    "zod": "^4.5.4",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

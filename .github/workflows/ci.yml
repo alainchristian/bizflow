@@ -12,6 +12,25 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: bizflow
+          POSTGRES_PASSWORD: bizflow
+          POSTGRES_DB: bizflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bizflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://bizflow:bizflow@localhost:5432/bizflow
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-change-me-please-0123456789
+      JWT_REFRESH_SECRET: ci-refresh-secret-change-me-please-0123456789
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +48,9 @@ jobs:
 
       - name: Unit tests
         run: npm run test
+
+      - name: Run migrations
+        run: npm run migration:run
 
       - name: E2E tests
         run: npm run test:e2e

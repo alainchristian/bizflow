@@ -19,10 +19,12 @@ This starts Postgres, Redis, the NestJS API (`http://localhost:3000/api/v1`, hea
 To work on one app at a time without Docker:
 
 ```bash
-cd backend && npm install && npm run start:dev
+cd backend && npm install && cp .env.example .env && npm run migration:run && npm run start:dev
 cd frontend && npm install && npm run dev
 ```
 
+`backend/.env.example` documents the required environment variables (database, JWT secrets, CORS origins).
+
 ## Status
 
-Step 1 — Foundation & Tooling complete. Next step: **Step 2 — Authentication** (see `docs/roadmap/build-order.md`).
+Step 2 — Authentication complete. Next step: **Step 3 — Multi-Tenancy & Organizations** (see `docs/roadmap/build-order.md`).

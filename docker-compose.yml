@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: bizflow
       POSTGRES_DB: bizflow
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -29,6 +29,19 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgres://bizflow:bizflow@postgres:5432/bizflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run migration:run
+
   api:
     build:
       context: ./backend
@@ -39,11 +52,18 @@ services:
       PORT: 3000
       DATABASE_URL: postgres://bizflow:bizflow@postgres:5432/bizflow
       REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: dev-access-secret-change-me-please-0123456789
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-me-please-0123456789
+      JWT_ACCESS_EXPIRES_IN_SECONDS: 900
+      JWT_REFRESH_EXPIRES_IN_SECONDS: 604800
+      CORS_ORIGINS: http://localhost:5173
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ./backend:/app
       - /app/node_modules
