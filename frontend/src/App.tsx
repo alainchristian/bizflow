@@ -6,6 +6,7 @@ import { LoginPage } from './pages/auth/LoginPage.tsx'
 import { RegisterPage } from './pages/auth/RegisterPage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { NotFoundPage } from './pages/NotFoundPage.tsx'
+import { CreateOrganizationPage } from './pages/organizations/CreateOrganizationPage.tsx'
 
 export function App() {
   return (
@@ -16,6 +17,7 @@ export function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route element={<RequireAuth />}>
           <Route path="account" element={<AccountPage />} />
+          <Route path="organizations/new" element={<CreateOrganizationPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

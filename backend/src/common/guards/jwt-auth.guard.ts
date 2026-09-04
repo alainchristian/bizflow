@@ -7,17 +7,16 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { TenantContextStore } from '../tenant-context/tenant-context.store.js';
+import { AuthenticatedRequest } from '../types/authenticated-request.type.js';
 import { JwtPayload } from '../types/jwt-payload.type.js';
-
-export interface AuthenticatedRequest extends Request {
-  user: JwtPayload;
-}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly tenantContext: TenantContextStore,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,6 +34,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired access token');
     }
 
+    await this.tenantContext.setUserId(request.user.sub);
     return true;
   }
 

@@ -10,7 +10,7 @@ import { User } from '../users/entities/user.entity.js';
 import { UsersService } from '../users/users.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { JwtPayload } from './types/jwt-payload.type.js';
+import { JwtPayload } from '../common/types/jwt-payload.type.js';
 
 export interface AuthTokens {
   accessToken: string;

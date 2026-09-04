@@ -33,7 +33,7 @@ services:
     build:
       context: ./backend
     environment:
-      DATABASE_URL: postgres://bizflow:bizflow@postgres:5432/bizflow
+      MIGRATION_DATABASE_URL: postgres://bizflow:bizflow@postgres:5432/bizflow
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,7 +50,7 @@ services:
       - '3000:3000'
     environment:
       PORT: 3000
-      DATABASE_URL: postgres://bizflow:bizflow@postgres:5432/bizflow
+      DATABASE_URL: postgres://bizflow_app:bizflow_app_dev_password@postgres:5432/bizflow
       REDIS_URL: redis://redis:6379
       JWT_ACCESS_SECRET: dev-access-secret-change-me-please-0123456789
       JWT_REFRESH_SECRET: dev-refresh-secret-change-me-please-0123456789

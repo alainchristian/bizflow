@@ -27,4 +27,4 @@ cd frontend && npm install && npm run dev
 
 ## Status
 
-Step 2 — Authentication complete. Next step: **Step 3 — Multi-Tenancy & Organizations** (see `docs/roadmap/build-order.md`).
+Step 3 — Multi-Tenancy & Organizations complete. Next step: **Step 4 — Users, Roles & Permissions** (see `docs/roadmap/build-order.md`). See `docs/multi-tenancy/tenant-isolation.md` for how tenant scoping actually works before adding a new tenant-scoped table or endpoint.

@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
+import { OrgSwitcher } from '../components/OrgSwitcher.tsx'
 import { useAuthStore } from '../stores/auth-store.ts'
 
 export function AppLayout() {
@@ -10,9 +11,12 @@ export function AppLayout() {
         <Link to="/" className="text-lg font-semibold text-gray-900">
           BizFlow
         </Link>
-        <nav className="flex gap-4 text-sm text-gray-700">
+        <nav className="flex items-center gap-4 text-sm text-gray-700">
           {isAuthenticated ? (
-            <Link to="/account">Account</Link>
+            <>
+              <OrgSwitcher />
+              <Link to="/account">Account</Link>
+            </>
           ) : (
             <>
               <Link to="/login">Log in</Link>

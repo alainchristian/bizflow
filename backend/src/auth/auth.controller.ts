@@ -10,12 +10,12 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service.js';
 import { AuthService } from './auth.service.js';
-import { CurrentUser } from './decorators/current-user.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
-import type { JwtPayload } from './types/jwt-payload.type.js';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
+import type { JwtPayload } from '../common/types/jwt-payload.type.js';
 
 @Controller('auth')
 export class AuthController {
