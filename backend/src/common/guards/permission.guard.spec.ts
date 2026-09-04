@@ -39,23 +39,23 @@ describe('PermissionGuard', () => {
   });
 
   it('allows a role that has the required permission', async () => {
-    reflector.get.mockReturnValue(Permission.MEMBERS_INVITE);
+    reflector.get.mockReturnValue(Permission.ORGANIZATIONS_MEMBERS_INVITE);
     membershipsService.findMembership.mockResolvedValue({ role: MembershipRole.ADMIN });
 
     await expect(guard.canActivate(buildContext())).resolves.toBe(true);
   });
 
   it("rejects a role that doesn't have the required permission", async () => {
-    reflector.get.mockReturnValue(Permission.MEMBERS_MANAGE_ROLES);
+    reflector.get.mockReturnValue(Permission.ORGANIZATIONS_MEMBERS_MANAGE_ROLES);
     membershipsService.findMembership.mockResolvedValue({ role: MembershipRole.ADMIN });
 
     await expect(guard.canActivate(buildContext())).rejects.toThrow(
-      'Missing required permission: members.manage_roles',
+      'Missing required permission: organizations.members.manage_roles',
     );
   });
 
   it('rejects when the caller has no membership in the organization at all', async () => {
-    reflector.get.mockReturnValue(Permission.MEMBERS_INVITE);
+    reflector.get.mockReturnValue(Permission.ORGANIZATIONS_MEMBERS_INVITE);
     membershipsService.findMembership.mockResolvedValue(null);
 
     await expect(guard.canActivate(buildContext())).rejects.toThrow(
@@ -64,7 +64,7 @@ describe('PermissionGuard', () => {
   });
 
   it('throws if userId/organizationId are not already set on the context', async () => {
-    reflector.get.mockReturnValue(Permission.MEMBERS_INVITE);
+    reflector.get.mockReturnValue(Permission.ORGANIZATIONS_MEMBERS_INVITE);
     tenantContext.organizationId = null;
 
     await expect(guard.canActivate(buildContext())).rejects.toThrow(

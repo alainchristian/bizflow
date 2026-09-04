@@ -13,6 +13,11 @@ import { envValidationSchema } from './config/env.validation.js';
 import { Membership } from './common/memberships/entities/membership.entity.js';
 import { TenantContextMiddleware } from './common/tenant-context/tenant-context.middleware.js';
 import { TenantContextModule } from './common/tenant-context/tenant-context.module.js';
+import { CrmModule } from './crm/crm.module.js';
+import { Contact } from './crm/entities/contact.entity.js';
+import { CustomerNote } from './crm/entities/customer-note.entity.js';
+import { Customer } from './crm/entities/customer.entity.js';
+import { Lead } from './crm/entities/lead.entity.js';
 import { HealthModule } from './health/health.module.js';
 import { OrganizationSettings } from './organizations/entities/organization-settings.entity.js';
 import { Organization } from './organizations/entities/organization.entity.js';
@@ -33,7 +38,17 @@ import { UsersModule } from './users/users.module.js';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
-        entities: [User, Organization, OrganizationSettings, Membership, Invitation],
+        entities: [
+          User,
+          Organization,
+          OrganizationSettings,
+          Membership,
+          Invitation,
+          Lead,
+          Customer,
+          Contact,
+          CustomerNote,
+        ],
         synchronize: false,
       }),
     }),
@@ -42,6 +57,7 @@ import { UsersModule } from './users/users.module.js';
     UsersModule,
     AuthModule,
     OrganizationsModule,
+    CrmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

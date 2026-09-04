@@ -105,8 +105,8 @@ src/
 
 > Update this section as work progresses — it tells Claude Code exactly where the project is and what's next, so a new session doesn't have to guess.
 
-**Status:** Step 4 — Users, Roles & Permissions complete.
-**Next step:** Step 5 — CRM Core (Leads & Customers) — the first real tenant-scoped business module; use `TenantScopedRepository` + `expectTenantIsolation` from day one, per `/docs/multi-tenancy/tenant-isolation.md`. See `/docs/roadmap/build-order.md`.
+**Status:** Step 5 — CRM Core (Leads & Customers) complete: `leads`/`customers`/`contacts`/`customer_notes` tables (tenant-scoped, RLS-enforced), lead→customer conversion preserving source history, customer notes, `crm.*` permissions on the Step 4 guard pattern, and the reusable `DataTable` component (TanStack Table v8) that Step 6+ should reuse rather than re-build. See the chat history around this step for the DataTable design notes flagged for catalog/quotations/invoicing.
+**Next step:** Step 6 — Catalog (Products & Services). See `/docs/roadmap/build-order.md`.
 
 Step 1 deliverables in place: NestJS backend (`backend/`) with config module, logging, and a Terminus health-check at `/api/v1/health`; Vite + React + TS frontend (`frontend/`) with a routing skeleton (React Router) and a Tailwind + Radix Themes design-system base; `docker-compose.yml` running Postgres, Redis, the API, and the frontend together (verified with `docker compose up`); GitHub Actions CI (`.github/workflows/ci.yml`) running lint/test/build for both apps on every PR.
 

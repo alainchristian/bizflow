@@ -20,12 +20,14 @@ gets scoped to one organization end to end, and why each piece exists.
 
 ## The request-scoped pieces
 
-Four things cooperate on every request, in this order:
+Five things cooperate on every request, in this order:
 
-1. **`TenantContextMiddleware`** (`common/tenant-context/`) wraps the entire
-   request in one `DataSource.transaction(...)` and stores the transactional
-   `EntityManager` in an `AsyncLocalStorage` (`TenantContextStore`). This
-   runs before guards, so it's already in place when they need it.
+1. **`TenantContextMiddleware`** (`common/tenant-context/`) opens one
+   transaction per request -- via a single `QueryRunner` pinned to one
+   connection for the request's duration -- and stores it in an
+   `AsyncLocalStorage` (`TenantContextStore`). This runs before guards, so
+   it's already in place when they need it. It only *opens* the
+   transaction; it does not commit or roll back (see point 5).
 2. **`JwtAuthGuard`** (`common/guards/`) verifies the access token, then
    calls `tenantContext.setUserId(sub)` -- this both records the user id in
    the request's context object and runs
@@ -54,6 +56,28 @@ Four things cooperate on every request, in this order:
    i.e. `manager.getRepository(...)` on *this request's* transactional
    manager -- never a `@InjectRepository`-bound one, which would run on a
    different pooled connection where `app.current_org_id` was never set.
+5. **`TenantTransactionInterceptor`** commits the transaction once the
+   handler succeeds, and **`TenantTransactionExceptionFilter`** rolls it
+   back on any thrown exception (from a guard, a pipe, or the controller
+   itself) -- both global, both running *before* Nest is allowed to send
+   the response to the client. This ordering is load-bearing, not
+   cosmetic: an earlier version of this middleware waited for the HTTP
+   response to finish sending and committed *afterwards*, which meant a
+   client could receive a response for a write whose transaction hadn't
+   actually committed yet. Under light, sequential load the commit
+   (typically sub-millisecond) finished before anything else happened to
+   ask, masking the bug; it surfaced as sporadic, load-dependent test
+   failures (a request immediately following a write acting as though the
+   write hadn't happened) once multiple e2e spec files ran concurrently
+   against the same database -- exactly the kind of thing "worked in
+   testing" is not enough to catch, and worth knowing this class of bug is
+   the specific thing `TenantTransactionInterceptor`/`ExceptionFilter`
+   exist to close off. A plain middleware can't fix this on its own:
+   middleware runs *before* guards, but the "commit before responding"
+   hook has to wrap the controller call itself, which is what interceptors
+   are for; guard failures never reach an interceptor at all, which is why
+   the rollback half needs an exception filter instead (filters catch
+   exceptions from anywhere in the guard -> pipe -> controller pipeline).
 
 So a query is scoped like this: **request → `TenantContextMiddleware` opens
 the transaction → `JwtAuthGuard` sets the user → `OrganizationContextGuard`
@@ -67,6 +91,31 @@ repository can't be bypassed without also bypassing TypeScript's type
 system (nothing exposes the raw manager to a controller), and RLS can't be
 bypassed by application code at all, only by a superuser connection (see
 below).
+
+### A recurring NestJS DI gotcha: every module in a guard's dependency chain needs to be `@Global()`, not just the guard's own module
+
+Hit three times now while adding new feature modules (organizations,
+then crm), so it's worth naming explicitly rather than re-debugging a
+fourth time: `@UseGuards(SomeGuard)` referenced by class (not an
+instance) makes Nest instantiate/resolve `SomeGuard` using an injector
+scope that, in practice, needs *every* provider that guard's constructor
+depends on -- transitively -- to be resolvable without the *consuming*
+module (e.g. a brand-new `CrmModule`) importing anything beyond the
+guard's own module. Marking the guard's immediate host module
+(`CommonGuardsModule`) `@Global()` is necessary but was not always
+sufficient: `OrganizationContextGuard` also depends on
+`MembershipsService`, from `MembershipsModule` -- and until
+`MembershipsModule` was *also* marked `@Global()`, adding a third
+consumer (`CrmModule`) broke dependency resolution for
+`OrganizationContextGuard` at boot, even though the identical pattern
+had worked fine for the first two consumers (`AuthModule`,
+`OrganizationsModule`). The practical rule: when a shared guard/provider
+needs to work from an arbitrary future module, every module in its own
+dependency chain has to be `@Global()`, not just the one directly
+housing it. If a new module fails to boot with
+`UnknownDependenciesException` naming a guard that already works
+elsewhere, this is almost certainly why -- check what that guard
+depends on, and whether every link in that chain is actually global.
 
 ## Query builder usage is not auto-scoped
 
@@ -152,16 +201,18 @@ in that same already-scoped transaction.
 
 ## Known limitations / not done here
 
-- No RBAC yet (Step 4) -- `OrganizationContextGuard` establishes *which*
-  org a request operates in, not what the user is allowed to do inside it.
-  `memberships.role` is stored but not yet enforced.
+- RBAC (Step 4) establishes what a role is allowed to do; see
+  `docs/security/rbac.md`. `OrganizationContextGuard` on its own only ever
+  established *which* org a request operates in, never permissions.
 - **Every request holds one pooled Postgres connection for its full
   duration.** `TenantContextMiddleware` opens a transaction (and therefore
-  checks out a connection) at the start of the request and only
-  commits/releases it once the response has been sent -- which means *any*
-  slow step within that request (a slow query, but also a slow call to some
-  other service, an email send, anything awaited before the response goes
-  out) holds that connection the whole time, not just for the duration of
+  checks out a connection) at the start of the request;
+  `TenantTransactionInterceptor`/`TenantTransactionExceptionFilter`
+  commit or roll it back once the handler resolves, before the response
+  reaches the client (see above) -- which still means *any* slow step
+  within that request (a slow query, but also a slow call to some other
+  service, an email send, anything awaited before the handler returns)
+  holds that connection the whole time, not just for the duration of
   its own DB queries. This is the correct way to make per-request
   `SET LOCAL`-style session variables reliable under a pooled ORM, and is
   fine at MVP traffic levels. If connection-pool exhaustion ever shows up in

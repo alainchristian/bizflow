@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module.js';
+import { backdateColumn } from './utils/backdate-for-testing.js';
 import { expectTenantIsolation } from './utils/expect-tenant-isolation.js';
 import {
   createOrganizationWithOwner,
@@ -84,6 +86,32 @@ describe('Team & RBAC (e2e)', () => {
         .post(`/api/v1/invitations/${invite.body.id}/accept`)
         .set('Authorization', `Bearer ${owner.accessToken}`)
         .expect(404);
+    });
+
+    it('refuses to accept an expired invitation', async () => {
+      const owner = await createOrganizationWithOwner(app);
+      const inviteeEmail = `expired-invite-${randomUUID()}@example.com`;
+      const invite = await request(app.getHttpServer())
+        .post('/api/v1/organizations/current/invitations')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ email: inviteeEmail, role: 'member' })
+        .expect(201);
+
+      await backdateColumn(app, {
+        table: 'invitations',
+        column: 'expires_at',
+        id: invite.body.id,
+        organizationId: owner.organizationId,
+        userId: owner.userId,
+        value: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day in the past
+      });
+
+      const { accessToken } = await createOrganizationWithOwner(app, { email: inviteeEmail });
+
+      await request(app.getHttpServer())
+        .post(`/api/v1/invitations/${invite.body.id}/accept`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(400);
     });
   });
 

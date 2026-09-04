@@ -4,14 +4,28 @@ import { DataSource } from 'typeorm';
 import { TenantContextStore } from './tenant-context.store.js';
 
 /**
- * Opens one database transaction per request and runs the rest of the
- * request (guards, controller, services, repositories) inside it via
- * `TenantContextStore`, so the `SET LOCAL`-style session variables the
+ * Opens one database transaction per request -- via a single `QueryRunner`
+ * pinned to one connection for the request's duration -- and establishes
+ * `TenantContextStore` for the rest of the pipeline (guards, controller,
+ * services, repositories), so the `SET LOCAL`-style session variables the
  * guards set are visible to every query the request makes, and nowhere
- * else. The transaction commits on a successful (< 400) response and rolls
- * back otherwise -- Nest's exception filters already write the error
- * response before this ever inspects `res.statusCode`, so throwing here
- * only decides the fate of the transaction, not what the client sees.
+ * else.
+ *
+ * This middleware only *opens* the transaction and calls `next()`
+ * synchronously -- it does not commit or roll back. That happens in
+ * `TenantTransactionInterceptor` (commit, on success) and
+ * `TenantTransactionExceptionFilter` (rollback, on any thrown exception),
+ * which both run *before* Nest sends the response. An earlier version of
+ * this middleware waited for the response to finish and committed
+ * afterwards -- which meant the client could receive a response for a
+ * request whose writes hadn't actually landed yet. Under light,
+ * sequential load the commit is fast enough that this went unnoticed; it
+ * surfaced as sporadic, load-dependent failures (a request immediately
+ * following a write acting as though that write hadn't happened) once
+ * several e2e spec files ran concurrently against the same database.
+ * Committing/rolling back as part of the response pipeline itself, before
+ * the response value is allowed to reach the client, is what actually
+ * guarantees read-your-own-writes for the very next request.
  */
 @Injectable()
 export class TenantContextMiddleware implements NestMiddleware {
@@ -23,36 +37,17 @@ export class TenantContextMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
     try {
-      await this.dataSource.transaction(async (manager) => {
-        await this.tenantContext.run(manager, async () => {
-          await new Promise<void>((resolve) => {
-            const onDone = () => {
-              res.removeListener('finish', onDone);
-              res.removeListener('close', onDone);
-              resolve();
-            };
-            res.once('finish', onDone);
-            res.once('close', onDone);
-            next();
-          });
-        });
-
-        if (res.statusCode >= 400) {
-          throw new Error(
-            `Rolling back transaction after a ${res.statusCode} response`,
-          );
-        }
-      });
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
     } catch (error) {
-      if (!res.headersSent) {
-        // The request never reached a handler (e.g. the transaction itself
-        // failed to open) -- surface it instead of hanging.
-        this.logger.error(error);
-        res.status(500).json({ statusCode: 500, message: 'Internal server error' });
-      }
-      // Otherwise this is our own synthetic rollback-trigger error, or an
-      // error that Nest already turned into a response -- nothing more to do.
+      this.logger.error(error);
+      await queryRunner.release().catch(() => {});
+      res.status(500).json({ statusCode: 500, message: 'Internal server error' });
+      return;
     }
+
+    await this.tenantContext.run(queryRunner, async () => next());
   }
 }

@@ -27,4 +27,4 @@ cd frontend && npm install && npm run dev
 
 ## Status
 
-Step 4 — Users, Roles & Permissions complete. Next step: **Step 5 — CRM Core (Leads & Customers)** (see `docs/roadmap/build-order.md`) — the first real tenant-scoped business module. Read `docs/multi-tenancy/tenant-isolation.md` and `docs/security/rbac.md` before adding a new tenant-scoped table, endpoint, or permission.
+Step 5 — CRM Core (Leads & Customers) complete. Next step: **Step 6 — Catalog (Products & Services)** (see `docs/roadmap/build-order.md`). Read `docs/multi-tenancy/tenant-isolation.md` and `docs/security/rbac.md` before adding a new tenant-scoped table, endpoint, or permission.

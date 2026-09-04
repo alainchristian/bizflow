@@ -27,6 +27,13 @@ export class Invitation {
   })
   status!: InvitationStatus;
 
+  @Column({
+    type: 'timestamp',
+    name: 'expires_at',
+    default: () => "(now() + interval '7 days')",
+  })
+  expiresAt!: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 }

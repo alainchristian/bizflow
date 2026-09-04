@@ -44,7 +44,7 @@ export class TeamController {
   }
 
   @UseGuards(PermissionGuard)
-  @RequirePermission(Permission.MEMBERS_MANAGE_ROLES)
+  @RequirePermission(Permission.ORGANIZATIONS_MEMBERS_MANAGE_ROLES)
   @Patch('members/:membershipId/role')
   updateMemberRole(
     @Param('membershipId') membershipId: string,
@@ -54,28 +54,28 @@ export class TeamController {
   }
 
   @UseGuards(PermissionGuard)
-  @RequirePermission(Permission.MEMBERS_REMOVE)
+  @RequirePermission(Permission.ORGANIZATIONS_MEMBERS_REMOVE)
   @Delete('members/:membershipId')
   removeMember(@Param('membershipId') membershipId: string) {
     return this.teamService.removeMember(this.organizationId, membershipId);
   }
 
   @UseGuards(PermissionGuard)
-  @RequirePermission(Permission.MEMBERS_INVITE)
+  @RequirePermission(Permission.ORGANIZATIONS_MEMBERS_INVITE)
   @Post('invitations')
   inviteMember(@CurrentUser() user: JwtPayload, @Body() dto: InviteMemberDto) {
     return this.teamService.inviteMember(this.organizationId, user.sub, dto.email, dto.role);
   }
 
   @UseGuards(PermissionGuard)
-  @RequirePermission(Permission.MEMBERS_INVITE)
+  @RequirePermission(Permission.ORGANIZATIONS_MEMBERS_INVITE)
   @Get('invitations')
   listPendingInvitations() {
     return this.teamService.listPendingInvitations();
   }
 
   @UseGuards(PermissionGuard)
-  @RequirePermission(Permission.MEMBERS_INVITE)
+  @RequirePermission(Permission.ORGANIZATIONS_MEMBERS_INVITE)
   @Delete('invitations/:id')
   revokeInvitation(@Param('id') id: string) {
     return this.teamService.revokeInvitation(id);

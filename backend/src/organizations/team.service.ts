@@ -71,6 +71,9 @@ export class TeamService {
     if (!invitation) {
       throw new NotFoundException('Invitation not found');
     }
+    if (invitation.expiresAt < new Date()) {
+      throw new BadRequestException('This invitation has expired');
+    }
 
     const existingMembership = await this.membershipsService.findMembership(
       userId,

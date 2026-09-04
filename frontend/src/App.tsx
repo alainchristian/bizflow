@@ -4,6 +4,9 @@ import { AppLayout } from './layout/AppLayout.tsx'
 import { AccountPage } from './pages/AccountPage.tsx'
 import { LoginPage } from './pages/auth/LoginPage.tsx'
 import { RegisterPage } from './pages/auth/RegisterPage.tsx'
+import { CustomerDetailPage } from './pages/crm/CustomerDetailPage.tsx'
+import { CustomersPage } from './pages/crm/CustomersPage.tsx'
+import { LeadsPage } from './pages/crm/LeadsPage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { InvitationAcceptPage } from './pages/invitations/InvitationAcceptPage.tsx'
 import { NotFoundPage } from './pages/NotFoundPage.tsx'
@@ -22,6 +25,9 @@ export function App() {
           <Route path="account" element={<AccountPage />} />
           <Route path="organizations/new" element={<CreateOrganizationPage />} />
           <Route path="team" element={<TeamPage />} />
+          <Route path="crm/leads" element={<LeadsPage />} />
+          <Route path="crm/customers" element={<CustomersPage />} />
+          <Route path="crm/customers/:id" element={<CustomerDetailPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

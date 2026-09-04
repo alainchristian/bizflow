@@ -15,6 +15,8 @@ export function AppLayout() {
           {isAuthenticated ? (
             <>
               <OrgSwitcher />
+              <Link to="/crm/leads">Leads</Link>
+              <Link to="/crm/customers">Customers</Link>
               <Link to="/team">Team</Link>
               <Link to="/account">Account</Link>
             </>
