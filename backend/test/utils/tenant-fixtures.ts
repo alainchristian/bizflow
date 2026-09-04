@@ -11,6 +11,14 @@ export interface TenantFixture {
   organizationName: string;
 }
 
+export interface TeammateFixture {
+  email: string;
+  accessToken: string;
+  userId: string;
+  membershipId: string;
+  role: string;
+}
+
 /**
  * Registers a brand-new user and has them create a brand-new organization
  * (becoming its owner), returning everything a tenant-isolation test needs:
@@ -63,5 +71,51 @@ export async function createOrganizationWithOwner(
     userId,
     organizationId: organizationResponse.body.id as string,
     organizationName,
+  };
+}
+
+/**
+ * Invites a brand-new user into `owner`'s organization with the given role
+ * and immediately accepts on their behalf, returning that new teammate's
+ * own access token -- the thing every permission-boundary test needs (a
+ * real, non-owner member of the *same* organization, not just a member of
+ * some other one).
+ */
+export async function inviteAndAcceptMember(
+  app: INestApplication<App>,
+  owner: TenantFixture,
+  role: string,
+  overrides: { email?: string; fullName?: string; password?: string } = {},
+): Promise<TeammateFixture> {
+  const unique = randomUUID();
+  const email = overrides.email ?? `teammate-${unique}@example.com`;
+  const password = overrides.password ?? 'super-secret-1';
+  const fullName = overrides.fullName ?? 'Teammate User';
+
+  const inviteResponse = await request(app.getHttpServer())
+    .post('/api/v1/organizations/current/invitations')
+    .set('Authorization', `Bearer ${owner.accessToken}`)
+    .send({ email, role })
+    .expect(201);
+
+  const registerResponse = await request(app.getHttpServer())
+    .post('/api/v1/auth/register')
+    .send({ email, password, fullName })
+    .expect(201);
+
+  const accessToken = registerResponse.body.accessToken as string;
+  const userId = registerResponse.body.user.id as string;
+
+  const acceptResponse = await request(app.getHttpServer())
+    .post(`/api/v1/invitations/${inviteResponse.body.id}/accept`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .expect(201);
+
+  return {
+    email,
+    accessToken,
+    userId,
+    membershipId: acceptResponse.body.id as string,
+    role,
   };
 }

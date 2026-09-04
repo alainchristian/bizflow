@@ -16,6 +16,7 @@ import { TenantContextModule } from './common/tenant-context/tenant-context.modu
 import { HealthModule } from './health/health.module.js';
 import { OrganizationSettings } from './organizations/entities/organization-settings.entity.js';
 import { Organization } from './organizations/entities/organization.entity.js';
+import { Invitation } from './organizations/invitations/entities/invitation.entity.js';
 import { OrganizationsModule } from './organizations/organizations.module.js';
 import { User } from './users/entities/user.entity.js';
 import { UsersModule } from './users/users.module.js';
@@ -32,7 +33,7 @@ import { UsersModule } from './users/users.module.js';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
-        entities: [User, Organization, OrganizationSettings, Membership],
+        entities: [User, Organization, OrganizationSettings, Membership, Invitation],
         synchronize: false,
       }),
     }),

@@ -13,7 +13,7 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH'
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
   body?: unknown
   auth?: boolean
   /** Attach the currently selected organization as X-Organization-Id. */
@@ -42,10 +42,15 @@ export async function apiRequest<T>(
     body: body ? JSON.stringify(body) : undefined,
   })
 
+  // Some endpoints (e.g. DELETE) return an empty body -- calling
+  // .json() on that throws, so read as text first and only parse if
+  // there's actually something to parse.
+  const text = await response.text()
+  const payload = text ? JSON.parse(text) : undefined
+
   if (!response.ok) {
-    const payload = await response.json().catch(() => null)
     throw new ApiError(payload?.message ?? response.statusText, response.status)
   }
 
-  return response.json() as Promise<T>
+  return payload as T
 }

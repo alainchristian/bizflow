@@ -68,6 +68,44 @@ system (nothing exposes the raw manager to a controller), and RLS can't be
 bypassed by application code at all, only by a superuser connection (see
 below).
 
+## Query builder usage is not auto-scoped
+
+`TenantScopedRepository` only auto-scopes its five methods:
+`find`/`findOne`/`create`/`save`/`mergeAndSave`. It deliberately has no
+`createQueryBuilder()` and is not going to grow one -- a query builder call
+builds arbitrary SQL, and there is no general, safe way to auto-inject a
+`WHERE organizationId = …` into an arbitrary query without either being
+fragile (string-matching aliases, guessing join shapes) or so restrictive it
+isn't really a query builder anymore. `repository`/`entity` are `private` on
+the base class specifically so a subclass *can't* reach in and call
+`createQueryBuilder()` on the underlying TypeORM repository by accident.
+
+If a future module genuinely needs one (a report with a join, an aggregate,
+a cursor-paginated query the simple methods can't express), the pattern is:
+get the repository directly from `tenantContextStore.getRepository(Entity)`
+(the same way `MembershipsService` already does, rather than extending
+`TenantScopedRepository` for that method) and add the organization filter
+by hand on every such query:
+
+```ts
+this.tenantContext
+  .getRepository(SomeEntity)
+  .createQueryBuilder('e')
+  .andWhere('e.organizationId = :organizationId', {
+    organizationId: this.tenantContext.organizationId,
+  })
+  // ...the rest of the query
+```
+
+**This is not enforced by anything except code review and RLS.** For the
+five base-repository methods, RLS is a second layer behind an
+application-layer control that's already correct. For hand-written query
+builder code, RLS is the *only* enforced layer -- the application-layer
+"control" is just "the developer remembered to add `.andWhere(...)`". Treat
+any PR introducing a `.createQueryBuilder()` call on a tenant-owned table as
+needing extra scrutiny on this specific point, and give it its own
+tenant-isolation test via `expectTenantIsolation` like everything else.
+
 ## Row-Level Security
 
 Three things make RLS a *real* second layer rather than a no-op:
@@ -117,13 +155,25 @@ in that same already-scoped transaction.
 - No RBAC yet (Step 4) -- `OrganizationContextGuard` establishes *which*
   org a request operates in, not what the user is allowed to do inside it.
   `memberships.role` is stored but not yet enforced.
-- One DB transaction per request (everywhere `TenantContextMiddleware`
-  applies, i.e. everywhere except `/health` and the public `/auth/*`
-  endpoints) is the correct way to make per-request `SET LOCAL`-style
-  session variables reliable under a pooled ORM, but it does mean a slow
-  request holds a pooled connection for its whole duration. Acceptable at
-  MVP scale; would need attention (e.g. `idle_in_transaction_session_timeout`)
-  well before it became a real bottleneck.
+- **Every request holds one pooled Postgres connection for its full
+  duration.** `TenantContextMiddleware` opens a transaction (and therefore
+  checks out a connection) at the start of the request and only
+  commits/releases it once the response has been sent -- which means *any*
+  slow step within that request (a slow query, but also a slow call to some
+  other service, an email send, anything awaited before the response goes
+  out) holds that connection the whole time, not just for the duration of
+  its own DB queries. This is the correct way to make per-request
+  `SET LOCAL`-style session variables reliable under a pooled ORM, and is
+  fine at MVP traffic levels. If connection-pool exhaustion ever shows up in
+  production (requests queuing for a connection, intermittent timeouts under
+  load), don't spend time rediscovering why -- the fix is to shorten the
+  transaction's actual lifetime, i.e. move slow, non-DB I/O in a request
+  handler *outside* the scope of the transaction (do it before the
+  transaction would need to start, or after the response's DB work is
+  already committed), or add
+  `idle_in_transaction_session_timeout`/pool-size tuning as a stopgap while
+  that refactor happens. This has not been needed yet and is not a Step 3/4
+  concern -- it's written down here so it isn't a mystery outage later.
 
 ## Tenant isolation test suite
 
@@ -144,3 +194,29 @@ tenant-scoped endpoint that exists so far (`GET /organizations/current`,
 `PATCH /organizations/current/settings`). When a future module adds a
 tenant-scoped endpoint, its own e2e spec should add a case here (or a
 sibling file) calling `expectTenantIsolation` the same way.
+
+Two more properties of the isolation model are covered specifically, not
+just implied by the above:
+
+- **Concurrency, not just sequential tests.** Every test above `await`s one
+  request before sending the next, so on its own it would not catch a bug
+  where `TenantContextStore` failed to isolate two requests running at the
+  same time (e.g. if it were ever changed to a plain module-level variable
+  instead of an `AsyncLocalStorage`). The `Concurrent requests` block in
+  `tenant-isolation.e2e-spec.ts` fires ~25 interleaved requests across both
+  organizations via `Promise.all` (no `await` between dispatching them) and
+  asserts every single response still resolves to its own org's data.
+- **DTO-level rejection of spoofed org fields.** The global `ValidationPipe`
+  (`main.ts`, and every e2e spec's test app) is configured with
+  `whitelist: true, forbidNonWhitelisted: true` -- an `organizationId` or
+  `organization_id` field in a request body is not a recognized property of
+  any DTO in this codebase, so it doesn't get silently stripped, it makes
+  the whole request `400`. `organizations.e2e-spec.ts` has explicit cases
+  for this on both `POST /organizations` and
+  `PATCH /organizations/current/settings`, in both cases confirming the
+  target organization's data was left untouched by the rejected attempt.
+  This matters because it's a *third*, independent layer for exactly the
+  one field (`organizationId`) the other two layers exist to protect --
+  even before a request reaches a guard or a repository, the DTO itself
+  won't accept a client's opinion about which organization a row belongs
+  to.

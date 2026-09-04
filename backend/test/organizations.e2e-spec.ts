@@ -78,6 +78,36 @@ describe('Organizations (e2e)', () => {
         .send({ name: 'Bad Org', countryCode: 'usa', baseCurrency: 'dollars' })
         .expect(400);
     });
+
+    it('rejects a spoofed organizationId in the body rather than honoring it', async () => {
+      const { accessToken } = await registerUser(app);
+
+      // Neither field exists on CreateOrganizationDto, so the global
+      // ValidationPipe's forbidNonWhitelisted should reject the whole
+      // request -- proving the DTO layer, not just the repository layer,
+      // refuses to let a client name an organization id.
+      await request(app.getHttpServer())
+        .post('/api/v1/organizations')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          name: 'Spoofed Org',
+          countryCode: 'US',
+          baseCurrency: 'USD',
+          organizationId: randomUUID(),
+        })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/organizations')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          name: 'Spoofed Org',
+          countryCode: 'US',
+          baseCurrency: 'USD',
+          organization_id: randomUUID(),
+        })
+        .expect(400);
+    });
   });
 
   describe('GET /organizations', () => {
@@ -177,6 +207,30 @@ describe('Organizations (e2e)', () => {
         dateFormat: 'DD/MM/YYYY',
         taxInclusivePricing: false,
       });
+    });
+
+    it('rejects a spoofed organizationId/organization_id in the body', async () => {
+      const fixtureA = await createOrganizationWithOwner(app);
+      const fixtureB = await createOrganizationWithOwner(app);
+
+      await request(app.getHttpServer())
+        .patch('/api/v1/organizations/current/settings')
+        .set('Authorization', `Bearer ${fixtureA.accessToken}`)
+        .send({ invoiceNumberPrefix: 'INV-', organizationId: fixtureB.organizationId })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .patch('/api/v1/organizations/current/settings')
+        .set('Authorization', `Bearer ${fixtureA.accessToken}`)
+        .send({ invoiceNumberPrefix: 'INV-', organization_id: fixtureB.organizationId })
+        .expect(400);
+
+      // And org A's own settings were untouched by the rejected attempts.
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/organizations/current')
+        .set('Authorization', `Bearer ${fixtureA.accessToken}`)
+        .expect(200);
+      expect(response.body.settings.invoiceNumberPrefix).toBe('');
     });
   });
 });
