@@ -10,6 +10,11 @@ import { Permission } from './permission.enum.js';
  * customer is a more consequential, commit-like action, so it's held back
  * to owner/admin -- giving this module its own genuine role boundary to
  * test, the same way `organizations.members.manage_roles` is owner-only.
+ *
+ * Catalog is the opposite shape: item prices/SKUs feed directly into what
+ * customers get quoted and billed, so creating/editing them is held back
+ * to owner/admin -- a member can view the catalog (needed to build a
+ * quotation in Step 8) but not change it.
  */
 const ROLE_PERMISSIONS: Record<MembershipRole, ReadonlySet<Permission>> = {
   [MembershipRole.OWNER]: new Set(Object.values(Permission)),
@@ -21,12 +26,16 @@ const ROLE_PERMISSIONS: Record<MembershipRole, ReadonlySet<Permission>> = {
     Permission.CRM_LEADS_CONVERT,
     Permission.CRM_CUSTOMERS_VIEW,
     Permission.CRM_CUSTOMERS_MANAGE,
+    Permission.SALES_CATALOG_ITEMS_VIEW,
+    Permission.SALES_CATALOG_ITEMS_CREATE,
+    Permission.SALES_CATALOG_ITEMS_MANAGE,
   ]),
   [MembershipRole.MEMBER]: new Set([
     Permission.CRM_LEADS_VIEW,
     Permission.CRM_LEADS_CREATE,
     Permission.CRM_CUSTOMERS_VIEW,
     Permission.CRM_CUSTOMERS_MANAGE,
+    Permission.SALES_CATALOG_ITEMS_VIEW,
   ]),
 };
 

@@ -27,4 +27,4 @@ cd frontend && npm install && npm run dev
 
 ## Status
 
-Step 5 — CRM Core (Leads & Customers) complete. Next step: **Step 6 — Catalog (Products & Services)** (see `docs/roadmap/build-order.md`). Read `docs/multi-tenancy/tenant-isolation.md` and `docs/security/rbac.md` before adding a new tenant-scoped table, endpoint, or permission.
+Step 6 — Catalog (Products & Services) complete. Next step: **Step 7 — Tax Engine (basic)** (see `docs/roadmap/build-order.md`). Read `docs/multi-tenancy/tenant-isolation.md` and `docs/security/rbac.md` before adding a new tenant-scoped table, endpoint, or permission.

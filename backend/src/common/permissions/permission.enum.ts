@@ -32,4 +32,8 @@ export enum Permission {
   CRM_LEADS_CONVERT = 'crm.leads.convert',
   CRM_CUSTOMERS_VIEW = 'crm.customers.view',
   CRM_CUSTOMERS_MANAGE = 'crm.customers.manage',
+
+  SALES_CATALOG_ITEMS_VIEW = 'sales.catalog_items.view',
+  SALES_CATALOG_ITEMS_CREATE = 'sales.catalog_items.create',
+  SALES_CATALOG_ITEMS_MANAGE = 'sales.catalog_items.manage',
 }

@@ -1,24 +1,20 @@
 import { z } from 'zod'
-
-const optionalEmail = z
-  .union([z.string().email('Enter a valid email address'), z.literal('')])
-  .optional()
-  .transform((value) => (value === '' ? undefined : value))
+import { optionalEmail, optionalText } from '../../lib/zod-helpers.ts'
 
 export const createLeadSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
-  companyName: z.string().optional(),
-  email: optionalEmail,
-  phone: z.string().optional(),
-  source: z.string().optional(),
+  companyName: optionalText(),
+  email: optionalEmail(),
+  phone: optionalText(),
+  source: optionalText(),
 })
 
 export type CreateLeadValues = z.infer<typeof createLeadSchema>
 
 export const addContactSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
-  email: optionalEmail,
-  phone: z.string().optional(),
+  email: optionalEmail(),
+  phone: optionalText(),
 })
 
 export type AddContactValues = z.infer<typeof addContactSchema>

@@ -23,6 +23,8 @@ import { OrganizationSettings } from './organizations/entities/organization-sett
 import { Organization } from './organizations/entities/organization.entity.js';
 import { Invitation } from './organizations/invitations/entities/invitation.entity.js';
 import { OrganizationsModule } from './organizations/organizations.module.js';
+import { CatalogItem } from './sales/entities/catalog-item.entity.js';
+import { SalesModule } from './sales/sales.module.js';
 import { User } from './users/entities/user.entity.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -48,6 +50,7 @@ import { UsersModule } from './users/users.module.js';
           Customer,
           Contact,
           CustomerNote,
+          CatalogItem,
         ],
         synchronize: false,
       }),
@@ -58,6 +61,7 @@ import { UsersModule } from './users/users.module.js';
     AuthModule,
     OrganizationsModule,
     CrmModule,
+    SalesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

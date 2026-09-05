@@ -8,6 +8,7 @@ import { Lead } from '../crm/entities/lead.entity.js';
 import { OrganizationSettings } from '../organizations/entities/organization-settings.entity.js';
 import { Organization } from '../organizations/entities/organization.entity.js';
 import { Invitation } from '../organizations/invitations/entities/invitation.entity.js';
+import { CatalogItem } from '../sales/entities/catalog-item.entity.js';
 import { User } from '../users/entities/user.entity.js';
 
 config({ path: ['.env.local', '.env'] });
@@ -29,6 +30,7 @@ export const AppDataSource = new DataSource({
     Customer,
     Contact,
     CustomerNote,
+    CatalogItem,
   ],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,

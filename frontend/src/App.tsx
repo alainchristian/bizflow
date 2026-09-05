@@ -4,6 +4,7 @@ import { AppLayout } from './layout/AppLayout.tsx'
 import { AccountPage } from './pages/AccountPage.tsx'
 import { LoginPage } from './pages/auth/LoginPage.tsx'
 import { RegisterPage } from './pages/auth/RegisterPage.tsx'
+import { CatalogPage } from './pages/catalog/CatalogPage.tsx'
 import { CustomerDetailPage } from './pages/crm/CustomerDetailPage.tsx'
 import { CustomersPage } from './pages/crm/CustomersPage.tsx'
 import { LeadsPage } from './pages/crm/LeadsPage.tsx'
@@ -28,6 +29,7 @@ export function App() {
           <Route path="crm/leads" element={<LeadsPage />} />
           <Route path="crm/customers" element={<CustomersPage />} />
           <Route path="crm/customers/:id" element={<CustomerDetailPage />} />
+          <Route path="catalog" element={<CatalogPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

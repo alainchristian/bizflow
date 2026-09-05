@@ -17,6 +17,7 @@ export function AppLayout() {
               <OrgSwitcher />
               <Link to="/crm/leads">Leads</Link>
               <Link to="/crm/customers">Customers</Link>
+              <Link to="/catalog">Catalog</Link>
               <Link to="/team">Team</Link>
               <Link to="/account">Account</Link>
             </>
