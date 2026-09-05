@@ -20,8 +20,12 @@ import {
 } from '../../features/catalog/schemas.ts'
 import { CURRENCY_OPTIONS } from '../../features/organizations/schemas.ts'
 import { listMyOrganizations } from '../../features/organizations/api.ts'
+import { listTaxRules } from '../../features/tax/api.ts'
+import { fromRateBasisPoints } from '../../features/tax/schemas.ts'
 import { ApiError } from '../../lib/api.ts'
 import { useOrganizationStore } from '../../stores/organization-store.ts'
+
+const NO_TAX_RULE = 'none'
 
 const EMPTY_FORM: CatalogItemFormValues = {
   name: '',
@@ -30,6 +34,7 @@ const EMPTY_FORM: CatalogItemFormValues = {
   price: '',
   currencyCode: '',
   sku: undefined,
+  taxRuleId: NO_TAX_RULE,
 }
 
 export function CatalogPage() {
@@ -49,6 +54,15 @@ export function CatalogPage() {
     queryKey: ['catalog', 'items', currentOrganizationId],
     queryFn: listCatalogItems,
     enabled: currentOrganizationId !== null,
+  })
+
+  // Tax rule management is owner/admin-only (see role-permissions.ts), the
+  // same gate as catalog management, so whoever can see this form is
+  // always allowed to see the tax rules it lists.
+  const { data: taxRules } = useQuery({
+    queryKey: ['tax', 'rules', currentOrganizationId],
+    queryFn: listTaxRules,
+    enabled: currentOrganizationId !== null && canManage,
   })
 
   const {
@@ -71,6 +85,7 @@ export function CatalogPage() {
         price: fromPriceAmount(editingItem.priceAmount),
         currencyCode: editingItem.currencyCode,
         sku: editingItem.sku ?? undefined,
+        taxRuleId: editingItem.taxRuleId ?? NO_TAX_RULE,
       })
     } else {
       reset(EMPTY_FORM)
@@ -86,6 +101,7 @@ export function CatalogPage() {
         priceAmount: toPriceAmount(values.price),
         currencyCode: values.currencyCode,
         sku: values.sku,
+        taxRuleId: values.taxRuleId === NO_TAX_RULE ? null : values.taxRuleId,
       }
       return editingItem ? updateCatalogItem(editingItem.id, input) : createCatalogItem(input)
     },
@@ -111,6 +127,8 @@ export function CatalogPage() {
     setShowForm(true)
   }
 
+  const taxRuleNameById = new Map((taxRules ?? []).map((rule) => [rule.id, rule.name]))
+
   const columns: ColumnDef<CatalogItem, unknown>[] = [
     { header: 'Name', accessorKey: 'name' },
     {
@@ -132,6 +150,15 @@ export function CatalogPage() {
         <Badge color={c.getValue() ? 'green' : 'gray'}>{c.getValue() ? 'active' : 'inactive'}</Badge>
       ),
     },
+    ...(canManage
+      ? [
+          {
+            header: 'Tax rule',
+            accessorFn: (item: CatalogItem) =>
+              item.taxRuleId ? (taxRuleNameById.get(item.taxRuleId) ?? 'Unknown') : '—',
+          } satisfies ColumnDef<CatalogItem, unknown>,
+        ]
+      : []),
     ...(canManage
       ? [
           {
@@ -253,6 +280,29 @@ export function CatalogPage() {
           <label className="flex flex-col gap-1 text-sm text-gray-700">
             SKU
             <TextField.Root placeholder="Optional, mainly for products" {...register('sku')} />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-gray-700">
+            Tax rule
+            <Controller
+              control={control}
+              name="taxRuleId"
+              render={({ field }) => (
+                <Select.Root value={field.value} onValueChange={field.onChange}>
+                  <Select.Trigger />
+                  <Select.Content>
+                    <Select.Item value={NO_TAX_RULE}>No tax rule</Select.Item>
+                    {(taxRules ?? [])
+                      .filter((rule) => rule.isActive)
+                      .map((rule) => (
+                        <Select.Item key={rule.id} value={rule.id}>
+                          {rule.name} ({fromRateBasisPoints(rule.rateBasisPoints)}%)
+                        </Select.Item>
+                      ))}
+                  </Select.Content>
+                </Select.Root>
+              )}
+            />
           </label>
 
           <Button type="submit" disabled={saveMutation.isPending}>

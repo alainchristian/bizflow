@@ -13,6 +13,7 @@ import { InvitationAcceptPage } from './pages/invitations/InvitationAcceptPage.t
 import { NotFoundPage } from './pages/NotFoundPage.tsx'
 import { CreateOrganizationPage } from './pages/organizations/CreateOrganizationPage.tsx'
 import { TeamPage } from './pages/team/TeamPage.tsx'
+import { TaxRulesPage } from './pages/tax/TaxRulesPage.tsx'
 
 export function App() {
   return (
@@ -30,6 +31,7 @@ export function App() {
           <Route path="crm/customers" element={<CustomersPage />} />
           <Route path="crm/customers/:id" element={<CustomerDetailPage />} />
           <Route path="catalog" element={<CatalogPage />} />
+          <Route path="tax-rules" element={<TaxRulesPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

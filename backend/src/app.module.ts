@@ -24,6 +24,7 @@ import { Organization } from './organizations/entities/organization.entity.js';
 import { Invitation } from './organizations/invitations/entities/invitation.entity.js';
 import { OrganizationsModule } from './organizations/organizations.module.js';
 import { CatalogItem } from './sales/entities/catalog-item.entity.js';
+import { TaxRule } from './sales/entities/tax-rule.entity.js';
 import { SalesModule } from './sales/sales.module.js';
 import { User } from './users/entities/user.entity.js';
 import { UsersModule } from './users/users.module.js';
@@ -51,6 +52,7 @@ import { UsersModule } from './users/users.module.js';
           Contact,
           CustomerNote,
           CatalogItem,
+          TaxRule,
         ],
         synchronize: false,
       }),

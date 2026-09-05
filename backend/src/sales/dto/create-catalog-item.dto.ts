@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Length,
   Matches,
   Min,
@@ -38,4 +39,8 @@ export class CreateCatalogItemDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  taxRuleId?: string;
 }

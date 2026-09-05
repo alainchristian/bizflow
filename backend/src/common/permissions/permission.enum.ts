@@ -36,4 +36,8 @@ export enum Permission {
   SALES_CATALOG_ITEMS_VIEW = 'sales.catalog_items.view',
   SALES_CATALOG_ITEMS_CREATE = 'sales.catalog_items.create',
   SALES_CATALOG_ITEMS_MANAGE = 'sales.catalog_items.manage',
+
+  SALES_TAX_RULES_VIEW = 'sales.tax_rules.view',
+  SALES_TAX_RULES_CREATE = 'sales.tax_rules.create',
+  SALES_TAX_RULES_MANAGE = 'sales.tax_rules.manage',
 }

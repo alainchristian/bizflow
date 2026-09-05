@@ -16,6 +16,10 @@ export const catalogItemFormSchema = z.object({
     }),
   currencyCode: z.string().length(3, 'Select a currency'),
   sku: optionalText(),
+  // 'none' is a sentinel for "no tax rule" -- Radix Select disallows an
+  // empty-string item value, and this isn't a free-text field, so it
+  // doesn't need the optionalText()/''-vs-undefined treatment above.
+  taxRuleId: z.string(),
 })
 
 export type CatalogItemFormValues = z.infer<typeof catalogItemFormSchema>

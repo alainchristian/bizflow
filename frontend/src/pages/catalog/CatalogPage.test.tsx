@@ -13,9 +13,13 @@ vi.mock('../../features/catalog/api.ts', () => ({
 vi.mock('../../features/organizations/api.ts', () => ({
   listMyOrganizations: vi.fn(),
 }))
+vi.mock('../../features/tax/api.ts', () => ({
+  listTaxRules: vi.fn(),
+}))
 
 import { createCatalogItem, listCatalogItems, updateCatalogItem } from '../../features/catalog/api.ts'
 import { listMyOrganizations } from '../../features/organizations/api.ts'
+import { listTaxRules } from '../../features/tax/api.ts'
 
 const ORG_ID = 'org-1'
 
@@ -29,6 +33,7 @@ const items = [
     currencyCode: 'USD',
     sku: null,
     isActive: true,
+    taxRuleId: null,
     createdAt: new Date().toISOString(),
   },
 ]
@@ -45,6 +50,8 @@ describe('CatalogPage', () => {
     vi.mocked(createCatalogItem).mockReset()
     vi.mocked(updateCatalogItem).mockReset()
     vi.mocked(listMyOrganizations).mockReset()
+    vi.mocked(listTaxRules).mockReset()
+    vi.mocked(listTaxRules).mockResolvedValue([])
     useOrganizationStore.setState({ currentOrganizationId: ORG_ID })
   })
 
@@ -67,7 +74,13 @@ describe('CatalogPage', () => {
 
     renderWithProviders(<CatalogPage />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'New item' }))
+    await screen.findByRole('button', { name: 'New item' })
+    // Wait for the tax-rules query (a second, independent async load
+    // gated on the resolved role) to settle before interacting -- doing
+    // so mid-flight risks the table re-rendering out from under a
+    // just-found element between userEvent's pointer-down and click.
+    await waitFor(() => expect(listTaxRules).toHaveBeenCalled())
+    await userEvent.click(screen.getByRole('button', { name: 'New item' }))
     await userEvent.type(screen.getByLabelText('Name'), 'New Widget')
     await userEvent.type(screen.getByLabelText('Price'), '19.99')
 
@@ -93,7 +106,9 @@ describe('CatalogPage', () => {
 
     renderWithProviders(<CatalogPage />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Deactivate' }))
+    await screen.findByRole('button', { name: 'Deactivate' })
+    await waitFor(() => expect(listTaxRules).toHaveBeenCalled())
+    await userEvent.click(screen.getByRole('button', { name: 'Deactivate' }))
 
     await waitFor(() => expect(updateCatalogItem).toHaveBeenCalledWith('item-1', { isActive: false }))
   })

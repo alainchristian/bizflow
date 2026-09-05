@@ -11,6 +11,7 @@ export interface CatalogItem {
   currencyCode: string
   sku: string | null
   isActive: boolean
+  taxRuleId: string | null
   createdAt: string
 }
 
@@ -21,6 +22,7 @@ export interface CatalogItemInput {
   priceAmount: number
   currencyCode: string
   sku?: string
+  taxRuleId?: string | null
 }
 
 export function listCatalogItems() {

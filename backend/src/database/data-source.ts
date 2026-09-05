@@ -9,6 +9,7 @@ import { OrganizationSettings } from '../organizations/entities/organization-set
 import { Organization } from '../organizations/entities/organization.entity.js';
 import { Invitation } from '../organizations/invitations/entities/invitation.entity.js';
 import { CatalogItem } from '../sales/entities/catalog-item.entity.js';
+import { TaxRule } from '../sales/entities/tax-rule.entity.js';
 import { User } from '../users/entities/user.entity.js';
 
 config({ path: ['.env.local', '.env'] });
@@ -31,6 +32,7 @@ export const AppDataSource = new DataSource({
     Contact,
     CustomerNote,
     CatalogItem,
+    TaxRule,
   ],
   migrations: ['src/database/migrations/*.ts'],
   synchronize: false,

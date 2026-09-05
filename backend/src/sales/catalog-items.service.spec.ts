@@ -9,6 +9,7 @@ describe('CatalogItemsService', () => {
     listForCurrentOrganization: ReturnType<typeof vi.fn>;
     mergeAndSave: ReturnType<typeof vi.fn>;
   };
+  let taxRulesRepository: { findByIdInCurrentOrganization: ReturnType<typeof vi.fn> };
   let service: CatalogItemsService;
 
   beforeEach(() => {
@@ -18,8 +19,11 @@ describe('CatalogItemsService', () => {
       listForCurrentOrganization: vi.fn(),
       mergeAndSave: vi.fn((entity, partial) => Promise.resolve({ ...entity, ...partial })),
     };
+    taxRulesRepository = {
+      findByIdInCurrentOrganization: vi.fn(),
+    };
 
-    service = new CatalogItemsService(catalogItemsRepository as never);
+    service = new CatalogItemsService(catalogItemsRepository as never, taxRulesRepository as never);
   });
 
   it('throws NotFoundException when the item does not exist', async () => {
@@ -43,6 +47,7 @@ describe('CatalogItemsService', () => {
           description: null,
           sku: null,
           isActive: true,
+          taxRuleId: null,
         }),
       );
     });
@@ -59,6 +64,38 @@ describe('CatalogItemsService', () => {
       expect(catalogItemsRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({ isActive: false }),
       );
+    });
+
+    it('attaches a tax rule that exists in the current organization', async () => {
+      taxRulesRepository.findByIdInCurrentOrganization.mockResolvedValue({ id: 'rule-1' });
+
+      await service.create({
+        name: 'Widget',
+        type: CatalogItemType.PRODUCT,
+        priceAmount: 500,
+        currencyCode: 'USD',
+        taxRuleId: 'rule-1',
+      });
+
+      expect(taxRulesRepository.findByIdInCurrentOrganization).toHaveBeenCalledWith('rule-1');
+      expect(catalogItemsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ taxRuleId: 'rule-1' }),
+      );
+    });
+
+    it('rejects a tax rule id that does not exist in the current organization', async () => {
+      taxRulesRepository.findByIdInCurrentOrganization.mockResolvedValue(null);
+
+      await expect(
+        service.create({
+          name: 'Widget',
+          type: CatalogItemType.PRODUCT,
+          priceAmount: 500,
+          currencyCode: 'USD',
+          taxRuleId: 'someone-elses-rule',
+        }),
+      ).rejects.toThrow('taxRuleId does not refer to a tax rule in this organization');
+      expect(catalogItemsRepository.create).not.toHaveBeenCalled();
     });
   });
 
@@ -85,6 +122,15 @@ describe('CatalogItemsService', () => {
       await expect(service.update('missing', { isActive: false })).rejects.toThrow(
         'Catalog item not found',
       );
+    });
+
+    it('rejects reassigning to a tax rule id that does not exist in the current organization', async () => {
+      taxRulesRepository.findByIdInCurrentOrganization.mockResolvedValue(null);
+
+      await expect(service.update('item-1', { taxRuleId: 'someone-elses-rule' })).rejects.toThrow(
+        'taxRuleId does not refer to a tax rule in this organization',
+      );
+      expect(catalogItemsRepository.mergeAndSave).not.toHaveBeenCalled();
     });
   });
 });

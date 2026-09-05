@@ -15,6 +15,13 @@ import { Permission } from './permission.enum.js';
  * customers get quoted and billed, so creating/editing them is held back
  * to owner/admin -- a member can view the catalog (needed to build a
  * quotation in Step 8) but not change it.
+ *
+ * Tax rules go a step further and are owner/admin-only end to end,
+ * including view: unlike catalog prices, a member doesn't need to browse
+ * the tax configuration screen to do their job -- they'll see correct
+ * tax totals on a quotation/invoice without ever touching this screen --
+ * and tax setup is a compliance-sensitive admin function closer to team
+ * management than to day-to-day sales data entry.
  */
 const ROLE_PERMISSIONS: Record<MembershipRole, ReadonlySet<Permission>> = {
   [MembershipRole.OWNER]: new Set(Object.values(Permission)),
@@ -29,6 +36,9 @@ const ROLE_PERMISSIONS: Record<MembershipRole, ReadonlySet<Permission>> = {
     Permission.SALES_CATALOG_ITEMS_VIEW,
     Permission.SALES_CATALOG_ITEMS_CREATE,
     Permission.SALES_CATALOG_ITEMS_MANAGE,
+    Permission.SALES_TAX_RULES_VIEW,
+    Permission.SALES_TAX_RULES_CREATE,
+    Permission.SALES_TAX_RULES_MANAGE,
   ]),
   [MembershipRole.MEMBER]: new Set([
     Permission.CRM_LEADS_VIEW,

@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Length,
   Matches,
   Min,
@@ -42,4 +43,9 @@ export class UpdateCatalogItemDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  /** Pass null to unlink the item's tax rule. */
+  @IsOptional()
+  @IsUUID()
+  taxRuleId?: string | null;
 }

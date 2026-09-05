@@ -18,6 +18,7 @@ export function AppLayout() {
               <Link to="/crm/leads">Leads</Link>
               <Link to="/crm/customers">Customers</Link>
               <Link to="/catalog">Catalog</Link>
+              <Link to="/tax-rules">Tax</Link>
               <Link to="/team">Team</Link>
               <Link to="/account">Account</Link>
             </>

@@ -27,4 +27,4 @@ cd frontend && npm install && npm run dev
 
 ## Status
 
-Step 6 — Catalog (Products & Services) complete. Next step: **Step 7 — Tax Engine (basic)** (see `docs/roadmap/build-order.md`). Read `docs/multi-tenancy/tenant-isolation.md` and `docs/security/rbac.md` before adding a new tenant-scoped table, endpoint, or permission.
+Step 7 — Tax Engine (basic) complete. Next step: **Step 8 — Quotations** (see `docs/roadmap/build-order.md`). Read `docs/multi-tenancy/tenant-isolation.md`, `docs/security/rbac.md`, and `docs/architecture/tax-engine.md` before adding a new tenant-scoped table, endpoint, permission, or anything that computes tax.
